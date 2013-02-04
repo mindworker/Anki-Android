@@ -17,6 +17,19 @@
 
 package com.ichi2.anki;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.TreeSet;
+
+import org.amr.arabic.ArabicUtilities;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -67,6 +80,7 @@ import com.ichi2.filters.FilterFacade;
 import com.ichi2.libanki.Card;
 import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Note;
+import com.ichi2.libanki.Sound;
 import com.ichi2.libanki.Utils;
 import com.ichi2.themes.StyledDialog;
 import com.ichi2.themes.StyledDialog.Builder;
@@ -74,19 +88,6 @@ import com.ichi2.themes.StyledOpenCollectionDialog;
 import com.ichi2.themes.StyledProgressDialog;
 import com.ichi2.themes.Themes;
 import com.ichi2.widget.WidgetStatus;
-
-import org.amr.arabic.ArabicUtilities;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TreeSet;
 
 /**
  * Allows the user to edit a fact, for instance if there is a typo. A card is a presentation of a fact, and has two
@@ -161,6 +162,8 @@ public class CardEditor extends Activity {
     private TextView mModelButton;
     private TextView mDeckButton;
     private Button mSwapButton;
+    private Button mAudioPlayButton;
+    private Button mAudioSaveButton;
 
     private Note mEditorNote;
     private Card mCurrentEditedCard;
@@ -345,6 +348,8 @@ public class CardEditor extends Activity {
         mModelButton = (TextView) findViewById(R.id.CardEditorModelText);
         mTagsButton = (TextView) findViewById(R.id.CardEditorTagText);
         mSwapButton = (Button) findViewById(R.id.CardEditorSwapButton);
+        mAudioPlayButton = (Button) findViewById(R.id.CardEditorPlayAudioButton);
+        mAudioSaveButton = (Button) findViewById(R.id.CardEditorSaveAudioButton);
         mSwapButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
             	swapText(false);
@@ -396,6 +401,29 @@ public class CardEditor extends Activity {
                 }
                 mEditorNote = mCurrentEditedCard.note();
                 mAddNote = false;
+                
+                //enable AudioPlay
+                final String answer = mCurrentEditedCard.getAnswer(false);
+                
+                if(answer.contains("[sound:")){
+                	mAudioPlayButton.setEnabled(true);
+                	mAudioPlayButton.setOnClickListener(new View.OnClickListener() {
+						
+						@Override
+						public void onClick(View v) {
+							Collection col = AnkiDroidApp.getCol();
+					        if (col != null) {
+					        	String mBaseUrl = Utils.getBaseUrl(col.getMedia().getDir());
+								int qa = MetaDB.LANGUAGES_QA_ANSWER;								
+								
+								Sound.resetSounds();
+								Sound.parseSounds(mBaseUrl, answer, false, qa);
+								Sound.playSounds(qa);
+					        }
+						}
+					});
+                }
+                
                 break;
 
             case CALLER_CARDBROWSER_ADD:
